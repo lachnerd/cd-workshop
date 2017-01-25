@@ -10,4 +10,4 @@ master:
   volumes:
     - /usr/local/bin/docker:/usr/bin/docker
     - /var/run/docker.sock:/var/run/docker.sock
-    - ${pwd}:/var/jenkins_home
+    - ${pwd}/JENKINS_HOME:/var/jenkins_home
