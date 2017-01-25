@@ -8,6 +8,6 @@ master:
     - "50000:50000"
     - "8080:8080"
   volumes:
-    - $(which docker):/usr/bin/docker
+    - /usr/local/bin/docker:/usr/bin/docker
     - /var/run/docker.sock:/var/run/docker.sock
     - ${pwd}:/var/jenkins_home
