@@ -1,7 +1,7 @@
 master:
   build: .
   container_name: jenkins
-  restart: unless-stopped
+#  restart: unless-stopped
   environment:
     JAVA_OPTS: "-Djava.awt.headless=true"
   ports:
