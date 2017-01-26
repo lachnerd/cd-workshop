@@ -65,3 +65,4 @@ workflow-api 2.8
 durable-task 1.13
 workflow-scm-step 2.3
 handlebars 1.1.1
+tap 2.0.1
