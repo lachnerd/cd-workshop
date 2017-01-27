@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.9">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.24">
+    <script>//generiert einen beliebigen Port zw. 50k und 60k
+def randomPort() {
+    Random random = new Random() ;
+    random.nextInt(60000 - 50000) + 50000
+}
+
+//filtert allerhand unerwünschten Output damit das yslow.xml Testergebnis ein valides XML ergibt
+def filterYSlowXML(stdout) {
+	stdout = stdout - &apos;--: not found&apos;
+		stdout = stdout - &apos;-i: not found&apos;
+		stdout = stdout - &apos;phantomjs is /usr/local/bin/phantomjs&apos;
+		stdout = stdout - &apos;FAIL to load undefined&apos;
+		stdout = stdout - &apos;FAIL to load undefined&apos;
+		
+		stdout = stdout.replaceAll(&quot;(?m)^[ \t]*\r?\n&quot;, &quot;&quot;);
+		return stdout;
+}
+
+node {
+	//DOCKERHOST_IP muss mit der IP Adresse des des Hosts angepasst werden
+    def dockerHOST = &apos;127.0.0.1&apos;
+    
+    //URL zu GIT
+	def gitUrl = &apos;https://github.com/lachnerd/bobbuilderme.git&apos;
+	
+	//diverse Docker Images
+	def maven = docker.image(&apos;maven:3.3.9-jdk-8&apos;); // https://registry.hub.docker.com/_/maven/
+	def nginx = docker.image(&apos;nginx:alpine&apos;);
+	def yslow = docker.image(&apos;tmaier/yslow:latest&apos;);
+
+	stage(&apos;SCM&apos;) {
+	    git gitUrl
+	}
+
+	stage(&apos;Build&apos;) {
+	    //Maven Image holen
+	    maven.pull()
+
+	    //das Bauen läuft mit Hilfe eines Maven Docker Containers der lediglich den Maven Prozess zur Verfügung stellt
+	    //ohne root läuft kein npm ! deswegen mit &apos;-u root&apos;
+	    maven.inside(&apos;-u root&apos;) {
+	        //das lokal Maven Repo liegt im Workspace unter /var/jenkins_home/workspace/&lt;JOB&gt;@tmp/m2repo
+	        //solange der Workspace nicht gelöscht wird bleibt auch das Repo erhalten
+		    sh &quot;mvn -Dmaven.repo.local=${pwd tmp: true}/m2repo -B clean package&quot; 
+		}
+	}
+
+	def bobbuildermeImg
+	stage(&apos;Docker&apos;) {
+		nginx.pull()
+		bobbuildermeImg = docker.build(&quot;is2ag/bobbuilderme:${env.BUILD_TAG}&quot;, &apos;.&apos;)
+	}
+	
+	stage(&apos;Test&apos;) {
+	    
+	    dockerHOST = input(
+         id: &apos;userInput&apos;, message: &apos;Docker Host IP ?&apos;, parameters: [
+         [$class: &apos;TextParameterDefinition&apos;, defaultValue: &apos;127.0.0.1&apos;, description: &apos;Docker Host IP&apos;, name: &apos;ip&apos;]
+        ])
+        echo (&quot;Dockerhost: &quot;+dockerHOST)
+
+	    def port = randomPort().toString();
+	    
+	    //YSlow Test Image holen
+	    yslow.pull()
+	    
+	    
+	    //bobbuilder Image starten
+		//&apos;bob&apos; als Referenz auf den Containers
+		//ausserhalb des Containers aber in dessen Kontext YSlow Container starten und Test durchführen
+		bobbuildermeImg.withRun(&apos;--name bobbuilder -p &apos;+port+&apos;:80&apos;) {bob -&gt;	        
+	        
+	        def stdout = sh(script: &apos;docker run --rm tmaier/yslow:latest phantomjs /tmp/yslow.js -i basic  -f junit --threshold &quot;{&quot;overall&quot;: &quot;B&quot;, &quot;ycdn&quot;: 0 }&quot; &apos;+dockerHOST+&apos;:&apos;+port, returnStdout: true)
+            
+			//output filtern
+			stdout = filterYSlowXML(stdout)
+			//in Datei schreiben
+            writeFile file: &quot;yslow.xml&quot;, text: stdout
+            //Testergebnisse veröffentlichen
+            junit allowEmptyResults: true, testResults: &apos;yslow.xml&apos;
+			
+			//Warten auf Input
+			//hier wäre manuelles Testen möglich
+			input &quot;Anwendung in Ordnung - http://&quot; + dockerHOST + &quot;:&quot; + port + &quot; ?&quot;
+	    }
+	}
+	
+}
+</script>
+    <sandbox>false</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>
