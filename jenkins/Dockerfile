@@ -11,7 +11,7 @@ MAINTAINER Robert Lachner - heinzepreller@gmail.com
 #}
 
 # run
-# docker run -d --restart=unless-stopped --name=buildserver-jenkins -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/usr/bin/docker:ro -v /var/docker-volumes/jenkins:/var/jenkins_home heinzepreller/jenkins:2.41
+# docker run -d --restart=unless-stopped --name=buildserver-jenkins -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/usr/bin/docker:ro -v /var/docker-volumes/jenkins:/var/jenkins_home is2ag/jenkins:2.41
 
 # Change Context
 USER root
@@ -31,11 +31,11 @@ RUN cd /
 #komplette Folderstruktur im Dockerfile Folder als chroot ins Image kopieren
 COPY . /
 
-# alle Plugins runterladen wie in plugins.txt angegeben
-RUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt
-
 # supervisord
 USER root
+
+# alle Plugins runterladen wie in plugins.txt angegeben
+RUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt
 
 # Create log folder for supervisor and jenkins
 RUN mkdir -p /var/log/supervisor
