@@ -1,0 +1,8 @@
+master:
+  image: registry:2
+  container_name: registry
+  restart: unless-stopped
+  ports:
+    - "5000:5000"
+  volumes:
+    - ./registry-volume:/var/lib/registry
