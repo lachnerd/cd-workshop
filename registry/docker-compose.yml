@@ -6,3 +6,4 @@ master:
     - "5000:5000"
   volumes:
     - ./registry-volume:/var/lib/registry
+    - ./config.yml:/etc/docker/registry/config.yml
