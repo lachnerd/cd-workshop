@@ -7,7 +7,7 @@ sonar:
     SONARQUBE_JDBC_URL: jdbc:mysql://mysql:3306/sonarqube?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance
   volumes:
   - ./sonarqube-volume/sonar:/opt/sonarqube/data
-  image: sonarqube/6.2
+  image: sonarqube:6.2-alpine
   links:
   - mysql:mysql
 mysql:
