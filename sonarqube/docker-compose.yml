@@ -21,4 +21,4 @@ mysql:
   volumes:
   - ./sonarqube-volume/db:/var/lib/mysql
   hostname: mysql
-  image: mariadb:5.7
+  image: mysql:5.7
