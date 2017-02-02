@@ -1,7 +1,5 @@
 wordpress:
   image: wordpress:4.7.2-php7.1-fpm-alpine
-  depends_on:
-  - db
   links:
   - db:mysql
   ports:
