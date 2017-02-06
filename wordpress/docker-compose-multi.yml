@@ -31,5 +31,5 @@ services:
     image: kontena/haproxy:latest
     ports:
       -  80
-   links:
+    links:
      -   wordpress:wordpress-cluster-wordpress
